@@ -53,23 +53,6 @@ def load_data():
                     return X, y, df
             except:
                 continue
-
-    try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        resp = requests.get(github_raw_url, headers=headers, timeout=15)
-        resp.raise_for_status()
-        for enc in encodings:
-            try:
-                resp.encoding = enc
-                df = pd.read_csv(StringIO(resp.text), on_bad_lines="skip")
-                df.columns = df.columns.str.strip().str.replace(" ", "")
-                required_cols = ["年龄", "性别", "子女数量", "是否吸烟", "区域", "医疗费用"]
-                if all(col in df.columns for col in required_cols):
-                    X = df[["年龄", "性别", "子女数量", "是否吸烟", "区域"]]
-                    y = df["医疗费用"]
-                    return X, y, df
-            except:
-                continue
         st.error("❌ 远程CSV文件格式错误，缺少必要列或编码不兼容！")
         st.stop()
     except requests.exceptions.HTTPError as e:
@@ -208,3 +191,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
