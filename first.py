@@ -1,4 +1,4 @@
-# 先强制检查依赖安装（调试用，部署后可保留）
+# 先强制检查依赖安装（隐藏成功提示，仅保留错误提示）
 try:
     import streamlit as st
     import pandas as pd
@@ -13,7 +13,8 @@ try:
     import os
     import requests
     from io import StringIO
-    st.success("✅ 所有依赖库加载成功！")
+    # 删除成功提示：仅在控制台打印（页面完全不显示）
+    print("所有依赖库加载成功！")
 except ImportError as e:
     st.error(f"❌ 缺少依赖库：{str(e)}")
     st.error("请确保requirements.txt包含所有依赖并重启应用！")
@@ -27,10 +28,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ---------------------- 1. 加载CSV文件（本地+远程双兜底） ----------------------
+# ---------------------- 1. 加载CSV文件（隐藏所有成功提示） ----------------------
 @st.cache_data
 def load_data():
-    """加载CSV，优先本地，失败则远程读取GitHub Raw"""
+    """加载CSV，优先本地，失败则远程读取GitHub Raw（完全隐藏成功提示）"""
     # 配置信息（确认仓库名/分支名正确）
     local_csv = "insurance-chinese.csv"
     github_raw_url = "https://raw.githubusercontent.com/OPGOE/yiliao/main/insurance-chinese.csv"
@@ -44,15 +45,15 @@ def load_data():
                 df.columns = df.columns.str.strip().str.replace(" ", "")
                 required_cols = ["年龄", "性别", "子女数量", "是否吸烟", "区域", "医疗费用"]
                 if all(col in df.columns for col in required_cols):
-                    st.success(f"✅ 本地读取CSV成功（编码：{enc}）")
+                    # 完全隐藏成功提示：删除st.success，仅控制台打印（可选）
+                    print(f"本地读取CSV成功（编码：{enc}）")
                     X = df[["年龄", "性别", "子女数量", "是否吸烟", "区域"]]
                     y = df["医疗费用"]
                     return X, y, df
             except:
                 continue
 
-    # 远程读取逻辑
-    st.info("本地读取失败，尝试远程读取GitHub数据...")
+    # 远程读取逻辑（隐藏“尝试远程”的提示）
     try:
         headers = {"User-Agent": "Mozilla/5.0"}
         resp = requests.get(github_raw_url, headers=headers, timeout=15)
@@ -64,7 +65,8 @@ def load_data():
                 df.columns = df.columns.str.strip().str.replace(" ", "")
                 required_cols = ["年龄", "性别", "子女数量", "是否吸烟", "区域", "医疗费用"]
                 if all(col in df.columns for col in required_cols):
-                    st.success("✅ 远程读取CSV成功！")
+                    # 完全隐藏成功提示：删除st.success，仅控制台打印（可选）
+                    print("远程读取CSV成功！")
                     X = df[["年龄", "性别", "子女数量", "是否吸烟", "区域"]]
                     y = df["医疗费用"]
                     return X, y, df
