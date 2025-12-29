@@ -1,6 +1,14 @@
-# 依赖导入（完全静默成功提示，仅保留错误提示）
+# ========== 新增：强制屏蔽所有非错误提示（放在代码最顶部） ==========
+import streamlit as st
+# 重写st.success/st.info方法，使其无任何输出
+def empty_func(*args, **kwargs):
+    pass
+st.success = empty_func  # 屏蔽所有st.success提示
+st.info = empty_func     # 屏蔽所有st.info提示
+# ========== 原有代码继续 ==========
+
+# 依赖导入（无任何输出）
 try:
-    import streamlit as st
     import pandas as pd
     import numpy as np
     from sklearn.model_selection import train_test_split
@@ -13,13 +21,12 @@ try:
     import os
     import requests
     from io import StringIO
-    # 无任何成功提示输出（删除所有st.success/print）
 except ImportError as e:
     st.error(f"❌ 缺少依赖库：{str(e)}")
     st.error("请确保requirements.txt包含所有依赖并重启应用！")
     st.stop()
 
-# 页面基础配置
+# 后续代码不变（保留之前的完整逻辑）
 st.set_page_config(
     page_title="医疗费用预测系统",
     page_icon="🏥",
@@ -27,15 +34,13 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ---------------------- 1. 加载CSV文件（完全静默成功提示） ----------------------
+# ---------------------- 1. 加载CSV文件（完全静默） ----------------------
 @st.cache_data
 def load_data():
-    """加载CSV文件，仅在失败时显示错误，成功无任何提示"""
     local_csv = "insurance-chinese.csv"
     github_raw_url = "https://raw.githubusercontent.com/OPGOE/yiliao/main/insurance-chinese.csv"
     encodings = ["utf-8-sig", "gbk", "utf-8", "gb2312"]
 
-    # 本地读取逻辑
     if os.path.exists(local_csv):
         for enc in encodings:
             try:
@@ -49,7 +54,6 @@ def load_data():
             except:
                 continue
 
-    # 远程读取逻辑（无任何信息提示）
     try:
         headers = {"User-Agent": "Mozilla/5.0"}
         resp = requests.get(github_raw_url, headers=headers, timeout=15)
@@ -81,9 +85,8 @@ def load_data():
         st.error(f"❌ CSV读取失败：{str(e)}")
         st.stop()
 
-# ---------------------- 2. 模型训练（仅失败时提示） ----------------------
+# ---------------------- 2. 模型训练 ----------------------
 def train_model(X, y):
-    """训练模型，成功无提示，失败显示错误"""
     try:
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
@@ -111,10 +114,9 @@ def train_model(X, y):
         st.error(f"❌ 模型训练失败：{str(e)}")
         st.stop()
 
-# ---------------------- 3. 加载模型（仅失败时提示） ----------------------
+# ---------------------- 3. 加载模型 ----------------------
 @st.cache_resource
 def load_model():
-    """加载模型，成功无提示，失败自动重新训练"""
     if os.path.exists("model.pkl"):
         try:
             return joblib.load("model.pkl")
@@ -129,15 +131,9 @@ def load_model():
 
 # ---------------------- 4. 页面主逻辑 ----------------------
 def main():
-    # 侧边栏导航
     st.sidebar.title("🧭 导航")
-    page = st.sidebar.radio(
-        "",
-        ["简介", "预测医疗费用"],
-        index=1
-    )
+    page = st.sidebar.radio("", ["简介", "预测医疗费用"], index=1)
 
-    # 简介页面
     if page == "简介":
         st.title("🏥 医疗费用预测系统")
         st.markdown("---")
@@ -159,15 +155,12 @@ def main():
         
         💡 **提示**: 预测结果仅供参考，实际医疗费用可能因个人健康状况、医疗政策等因素而有所不同。
         """)
-    
-    # 预测页面
     else:
         st.title("🏥 医疗费用预测系统")
         st.markdown("---")
         st.markdown("基于外部CSV数据的医疗费用预测工具")
         st.markdown("---")
         
-        # 核心加载步骤（无成功提示）
         try:
             X, y, df = load_data()
             model = load_model()
@@ -175,7 +168,6 @@ def main():
             st.error(f"❌ 系统初始化失败：{str(e)}")
             return
 
-        # 输入表单
         st.subheader("📝 被保险人信息")
         col1, col2 = st.columns(2)
         with col1:
@@ -188,7 +180,6 @@ def main():
             region = st.selectbox("区域", options=region_options)
             bmi = st.number_input("BMI指数", min_value=10.0, max_value=50.0, value=25.0, step=0.1)
 
-        # 预测按钮
         st.markdown("---")
         if st.button("🚀 预测医疗费用", type="primary"):
             input_data = pd.DataFrame({
@@ -200,9 +191,9 @@ def main():
             })
             try:
                 prediction = model.predict(input_data)[0]
+                # 仅保留业务相关的成功提示（这是用户需要的，非冗余）
                 st.success(f"💰 预计年度医疗费用：${prediction:,.2f}")
                 
-                # 风险提示
                 warnings = []
                 if smoker == "是": warnings.append("吸烟会显著增加医疗费用风险")
                 if bmi > 30: warnings.append("BMI过高可能增加健康风险")
