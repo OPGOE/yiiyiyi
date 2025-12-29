@@ -11,7 +11,18 @@ import joblib
 import os
 import requests
 from io import StringIO
-
+# 在代码最顶部添加
+try:
+    import streamlit as st
+    import pandas as pd
+    import numpy as np
+    import sklearn
+    import joblib
+    import requests
+    st.success("✅ 所有依赖库安装成功！")
+except ImportError as e:
+    st.error(f"❌ 缺少依赖库：{e}")
+    st.stop()
 # 设置页面配置
 st.set_page_config(
     page_title="医疗费用预测系统",
@@ -307,3 +318,4 @@ def show_prediction_page():
 
 if __name__ == "__main__":
     main()
+
